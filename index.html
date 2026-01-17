@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bachelor Point Season 5 - High Speed Telegram Fix</title>
+    <title>Bachelor Point Season 5 - Professional High-Level Fix</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -17,6 +17,8 @@
             margin: 0; padding: 0; user-select: none; -webkit-user-select: none;
             padding-bottom: 80px;
         }
+        
+        .video-title { user-select: text !important; -webkit-user-select: text !important; cursor: text; font-weight: bold; }
         
         .header-section { background: linear-gradient(135deg, var(--primary), var(--secondary)); padding: 45px 20px 75px; text-align: center; color: white; border-radius: 0 0 45px 45px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .header-section h1 { margin: 0; font-size: 24px; text-transform: uppercase; font-weight: 900; }
@@ -40,7 +42,6 @@
         .download-btn { background: linear-gradient(135deg, #00c853, #007a33) !important; }
         .locked-btn { background: #555 !important; cursor: not-allowed; }
 
-        /* স্লিম ডাইনামিক টাইমার প্যানেল */
         #verify-overlay { 
             display: none; 
             position: fixed; 
@@ -62,7 +63,7 @@
 
     <div id="verify-overlay">
         <div id="countdown-display">১০</div>
-        <div style="font-size: 14px; color: #333; font-weight: bold;">অ্যাড লোড হচ্ছে... <br><span style="font-weight: normal; color: #666; font-size: 11px;">ফিরে আসা মাত্র ফলাফল লোডিং হবে।</span></div>
+        <div style="font-size: 14px; color: #333; font-weight: bold;">অ্যাড লোড হচ্ছে... <br><span style="font-weight: normal; color: #666; font-size: 11px;">ফিরে আসা মাত্র ফলাফল রিফ্রেশ হবে।</span></div>
     </div>
 
     <div class="header-section"><h1>Bachelor Point Season 5</h1></div>
@@ -104,7 +105,7 @@
             renderUI();
         }
 
-        // সার্চ বক্স ফিক্স: "Episode" লেখা খুঁজবে তারপর নাম্বার
+        // সার্চ বক্স: Episode এর পর সংখ্যা চেক করবে
         function renderUI() {
             const container = document.getElementById('video-display');
             const searchInput = document.getElementById('videoSearch').value.trim();
@@ -115,7 +116,7 @@
                 if (currentCategory !== "All" && v.category !== currentCategory) continue;
 
                 if (searchInput !== "") {
-                    // লজিক: ভিডিওর নামে "Episode" থাকতে হবে এবং তারপর সার্চ করা সংখ্যা থাকতে হবে
+                    // লজিক: ভিডিওর নামে "Episode" এবং তারপর ইনপুট করা সংখ্যা থাকতে হবে
                     const regex = new RegExp("Episode\\s*" + searchInput, "i");
                     if (!regex.test(v.name)) continue;
                 }
@@ -154,7 +155,7 @@
 
             let step = parseInt(localStorage.getItem('step_' + v_id)) || 0;
             if (step >= ads.length) {
-                Swal.fire({ title: 'ইনবক্স চেক করুন!', text: 'ভিডিও লিঙ্কটি বটের ইনবক্সে পাঠানো হয়েছে।', icon: 'success' }).then(() => {
+                Swal.fire({ title: 'ইনবক্স চেক করুন!', text: 'বটের ইনবক্সে পাঠানো হয়েছে।', icon: 'success' }).then(() => {
                     localStorage.setItem('time_' + v_id, Date.now());
                     localStorage.setItem('step_' + v_id, '0');
                     window.location.href = `https://t.me/${BOT_USERNAME}?start=${v_id}`;
@@ -162,7 +163,7 @@
                 return;
             }
 
-            // টেলিগ্রামের জন্য হাই-স্পিড ট্র্যাকিং
+            // সেশন ডাটা সেট
             localStorage.setItem('ad_active', 'true');
             localStorage.setItem('start_time', Date.now().toString());
             localStorage.setItem('active_vid', v_id);
@@ -172,13 +173,15 @@
             tg.openLink(ads[step]);
         }
 
-        // টেলিগ্রামে ফিরে আসা মাত্র রিলোড এবং নোটিশ লজিক
-        function processInstantResult() {
+        // ফিরে আসা মাত্র রিলোড এবং নোটিশ দেওয়ার আসল লজিক
+        function checkResultAfterReload() {
             if (localStorage.getItem('ad_active') === 'true') {
                 const startTime = parseInt(localStorage.getItem('start_time'));
-                const actualDiff = Math.floor((Date.now() - startTime) / 1000);
+                const now = Date.now();
+                const actualDiff = Math.floor((now - startTime) / 1000);
                 const remaining = REQUIRED_SEC - actualDiff;
 
+                // সেশন ক্লিয়ার যাতে বারবার নোটিশ না আসে
                 localStorage.removeItem('ad_active');
                 localStorage.removeItem('start_time');
                 document.getElementById('verify-overlay').style.display = 'none';
@@ -189,24 +192,30 @@
                     localStorage.setItem('step_' + vid, (parseInt(step) + 1).toString());
                     renderUI();
                     Swal.fire({ title: 'সফল!', text: '১০ সেকেন্ড পূর্ণ হয়েছে। অভিনন্দন!', icon: 'success' });
+                    tg.HapticFeedback.notificationOccurred('success');
                 } else {
+                    // আপনি যা চেয়েছেন: রিলোড হওয়ার পর কত সেকেন্ড বাকি ছিল তার নোটিশ
                     Swal.fire({ 
                         title: 'বিজ্ঞাপন রিপোর্ট', 
-                        text: `আপনি মাত্র ${actualDiff} সেকেন্ড ছিলেন। আরও ${remaining > 0 ? remaining : 0} সেকেন্ড দেখা বাকি ছিল।`, 
+                        text: `আপনি মাত্র ${actualDiff} সেকেন্ড ছিলেন। ১০ সেকেন্ড পূর্ণ হতে আরও ${remaining > 0 ? remaining : 0} সেকেন্ড বিজ্ঞাপন দেখতে হবে।`, 
                         icon: 'error' 
                     });
+                    tg.HapticFeedback.notificationOccurred('error');
                 }
             }
         }
 
-        // টেলিগ্রাম ইন-অ্যাপ ব্রাউজার ফিরে আসা শনাক্ত করা
-        window.onload = processInstantResult;
-        window.onfocus = processInstantResult;
+        // ইউজার ব্রাউজার ক্যানসেল করে ফিরে আসা মাত্র রিফ্রেশ নেবে
         document.addEventListener("visibilitychange", function() {
             if (document.visibilityState === 'visible') {
-                if (localStorage.getItem('ad_active') === 'true') location.reload();
+                if (localStorage.getItem('ad_active') === 'true') {
+                    location.reload(); // তাৎক্ষণিক রিফ্রেশ
+                }
             }
         });
+
+        // রিফ্রেশ হওয়ার পর অটোমেটিক রেজাল্ট চেক করবে
+        window.onload = checkResultAfterReload;
 
     </script>
 </body>
